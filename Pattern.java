@@ -13,7 +13,7 @@ public class Pattern extends Grid {
 		array = new Cell[height][width];
 		for (int row = 0; row < height; row++) {
 			for (int col = 0; col < width; col++) {
-				array[row][col] = new Cell(false);
+				array[row][col] = new Cell(row, col, false);
 			}
 		}
 		targetRow = r;

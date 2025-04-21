@@ -1,13 +1,29 @@
 public class Cell {
+	private int row;
+	private int col;
+
 	private boolean hasMine;
 	private boolean opened = false;
 	private boolean flagged = false;
 	private boolean visible = false;
+
 	private int internalNumber;
 	private int externalNumber;
 
-	public Cell(boolean mine) {
+	private float score;
+
+	public Cell(int r, int c, boolean mine) {
+		row = r;
+		col = c;
 		hasMine = mine;
+	}
+
+	public int getRow() {
+		return row;
+	}
+
+	public int getCol() {
+		return col;
 	}
 
 	public boolean hasMine() {
@@ -15,6 +31,9 @@ public class Cell {
 	}
 
 	public void open() {
+		if (opened) {
+			throw new IllegalStateException("You cannot open an already-opened cell.");
+		}
 		if (flagged) {
 			throw new IllegalStateException("You cannot open a flagged cell.");
 		}
@@ -59,5 +78,13 @@ public class Cell {
 
 	public int getExternalNumber() {
 		return externalNumber;
+	}
+
+	public void setScore(float s) {
+		score = s;
+	}
+
+	public float getScore() {
+		return score;
 	}
 }

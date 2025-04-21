@@ -1,32 +1,43 @@
+import java.util.Queue;
+import java.util.LinkedList;
+
 import java.awt.Color;
-import java.awt.Font;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 
+import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
 public class Main {
-	final int BOARD_HEIGHT = 16; //32
-	final int BOARD_WIDTH = 16; //64
-	final int NUM_OF_MINES = 40;
+	final int BOARD_HEIGHT = 16;
+	final int BOARD_WIDTH = 30;
+	final int NUM_OF_MINES = 99;
 
 	final int CELL_LENGTH = 20; // MANY GRAPHICS HAVE BEEN HARD-CODED TO THIS VALUE; DO NOT CHANGE
 
-	final int SPEED = 20;
+	final int SPEED = 0;
+	final int WAIT = 0;
 
-	Board gameBoard;
+	private Queue<Boolean> masteryList = new LinkedList<Boolean>();
 
-	MainPanel mainPanel;
+	private Board gameBoard;
+	private Solver boardSolver = new Solver();
+
+	private MainPanel mainPanel;
 
 	public static void main(String[] args) {
+		System.out.println("Hello, Saturn!");
 		new Main();
 	}
 
 	public Main() {
 		gameBoard = new Board(BOARD_HEIGHT, BOARD_WIDTH, NUM_OF_MINES);
 		JFrame frame = new JFrame("MineSaturn");
+		ImageIcon icon = new ImageIcon("minesaturntransparent.png");
+		frame.setIconImage(icon.getImage());
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		mainPanel = new MainPanel();
 		frame.add(mainPanel);
@@ -36,7 +47,7 @@ public class Main {
 			gameBoard = new Board(BOARD_HEIGHT, BOARD_WIDTH, NUM_OF_MINES);
 			solve();
 			try {
-				Thread.sleep(2000);
+				Thread.sleep(WAIT);
 			} catch (InterruptedException e) {
 				Thread.currentThread().interrupt();
 			}
@@ -138,7 +149,7 @@ public class Main {
 			}
 			if (gameBoard.isExploded()) {
 				
-			} else if (gameBoard.getNumOfOpened() + NUM_OF_MINES == BOARD_HEIGHT * BOARD_WIDTH) {
+			} else if (gameBoard.hasWon()) {
 				
 			}
 			g2d.dispose();
@@ -146,9 +157,8 @@ public class Main {
 	}
 
 	public void solve() {
-		Solver boardSolver = new Solver();
 		while (!gameBoard.isExploded()
-		&& gameBoard.getNumOfOpened() + NUM_OF_MINES != BOARD_HEIGHT * BOARD_WIDTH) {
+		&& !gameBoard.hasWon()) {
 			gameBoard = boardSolver.iterate(gameBoard);
 			try {
 				Thread.sleep(SPEED);
@@ -157,5 +167,18 @@ public class Main {
 			}
 			mainPanel.repaint();
 		}
+		while (masteryList.size() >= 100) {
+			masteryList.remove();
+		}
+		masteryList.add(gameBoard.hasWon());
+		int wins = 0;
+		for (Boolean result : masteryList) {
+			if (result) {
+				wins++;
+			}
+		}
+		System.out.print(String.valueOf(wins));
+		System.out.print(" / ");
+		System.out.println(String.valueOf(masteryList.size()));
 	}
 }

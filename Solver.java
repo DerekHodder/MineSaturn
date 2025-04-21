@@ -1,5 +1,6 @@
 import java.util.Set;
 import java.util.HashSet;
+import java.util.Random;
 
 public class Solver {
 	Set<Pattern> patterns = constructPatterns();
@@ -9,51 +10,75 @@ public class Solver {
 	}
 
 	public Board iterate(Board gameBoard) {
+		Set<Cell> randomCells = new HashSet<Cell>();
+		Set<Cell> visibleCells = new HashSet<Cell>();
+		Cell bestCell = null;
+		Pattern bestPattern = null;
 		for (int row = 0; row < gameBoard.getHeight(); row++) {
 			for (int col = 0; col < gameBoard.getWidth(); col++) {
-				Cell cell = gameBoard.array[row][col];
-				if (!cell.isOpened() && !cell.hasFlag() && cell.isVisible()) {
-					for (Pattern basePattern : patterns) {
-						for (Pattern individualPattern : basePattern.get8Transformations()) {
-							if (overlay(gameBoard, individualPattern, row, col)) {
-								Set<Cell> neighbors = gameBoard.getNeighbors(row, col);
-								if (individualPattern.openTarget()) {
-									cell.open();
-									gameBoard.setNumOfOpened(gameBoard.getNumOfOpened() + 1);
-									if (cell.hasMine()) {
-										gameBoard.explode();
-									}
-									for (Cell neighbor : neighbors) {
-										neighbor.setVisible();
-									}
-								} else {
-									cell.flag();
-									for (Cell neighbor : neighbors) {
-										neighbor.setInternalNumber(neighbor.getInternalNumber() - 1);
-									}
+				Cell currentCell = gameBoard.getCell(row, col);
+				if (!currentCell.isOpened() && !currentCell.hasFlag()) {
+					if (currentCell.isVisible()) {
+						visibleCells.add(currentCell);
+						for (Pattern basePattern : patterns) {
+							for (Pattern individualPattern : basePattern.get8Transformations()) {
+								if (overlay(gameBoard, individualPattern, row, col)) {
+									bestCell = currentCell;
+									bestPattern = basePattern;
 								}
-								return gameBoard;
 							}
 						}
+					} else {
+						randomCells.add(currentCell);
 					}
 				}
 			}
 		}
-		int randomRow = (int) (Math.random() * gameBoard.getHeight());
-		int randomCol = (int) (Math.random() * gameBoard.getWidth());
-		Cell randomCell = gameBoard.array[randomRow][randomCol];
-		if (!randomCell.hasFlag()) {
-			randomCell.open();
-			gameBoard.setNumOfOpened(gameBoard.getNumOfOpened() + 1);
-			if (randomCell.hasMine()) {
+		Cell targetCell;
+		boolean usedExistingPattern = false;
+		if (visibleCells.isEmpty()) {
+			targetCell = getRandomCell(randomCells);
+		} else if (bestCell == null) {
+			targetCell = getRandomCell(visibleCells);
+		} else {
+			targetCell = bestCell;
+			usedExistingPattern = true;
+		}
+		Set<Cell> neighbors = gameBoard.getNeighbors(targetCell);
+
+		boolean hadMine = targetCell.hasMine();
+		if (usedExistingPattern && !bestPattern.openTarget()) {
+			targetCell.flag();
+			for (Cell neighbor : neighbors) {
+				neighbor.setInternalNumber(neighbor.getInternalNumber() - 1);
+			}
+			if (!hadMine) {
 				gameBoard.explode();
 			}
-			Set<Cell> neighbors = gameBoard.getNeighbors(randomRow, randomCol);
+		} else {
+			targetCell.open();
 			for (Cell neighbor : neighbors) {
 				neighbor.setVisible();
 			}
+			if (hadMine) {
+				gameBoard.explode();
+			} else {
+				gameBoard.setNumOfOpened(gameBoard.getNumOfOpened() + 1);
+			}
 		}
 		return gameBoard;
+	}
+
+	private Cell getRandomCell(Set<Cell> cellSet) {
+		int cellIndex = new Random().nextInt(cellSet.size());
+		int currentIndex = 0;
+		for (Cell cell : cellSet) {
+			if (currentIndex == cellIndex) {
+				return cell;
+			}
+			currentIndex++;
+		}
+		return null;
 	}
 
 	private boolean overlay(Board board, Pattern pattern, int row, int col) {
